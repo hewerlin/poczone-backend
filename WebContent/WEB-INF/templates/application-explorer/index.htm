@@ -1,0 +1,246 @@
+<!doctype html>
+<html>
+<title>${html:locaName}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="${html:description}" />
+<meta charset="UTF-8" />
+<style>
+body, input {
+	font-family: monospace;
+	font-size: 14pt;
+}
+
+a, .suggestion {
+	color: #048;
+	text-decoration: none;
+}
+
+#index, #operations, #result {
+	background: linear-gradient(to bottom, #ddd, #f8f8f8, #fff);
+}
+
+#index {
+	position: absolute;
+	left: 0;
+	width: calc(33% - 1px);
+	top: 0;
+	bottom: 0;
+	overflow: auto;
+	border-right: solid #048 1px;
+}
+
+#operations {
+	position: absolute;
+	left: 33%;
+	width: calc(33% - 1px);
+	top: 0;
+	bottom: 0;
+	overflow: auto;
+	border-right: solid #048 1px;
+}
+
+.operation {
+	display: none;
+}
+
+#result {
+	position: absolute;
+	width: 34%;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	overflow: auto;
+}
+
+#result .content {
+	font-size: 0.8em;
+}
+
+input[type=text] {
+	width: 100%;
+}
+
+.more {
+	font-size: 0.7em;
+	color: #888;
+}
+
+.suggestion {
+	cursor: pointer;
+	font-size: 8pt;
+}
+
+#result.success {
+	background: #efe;
+}
+
+#result.error {
+	background: #fee;
+}
+
+h1 {
+	background: #048;
+	color: #fff;
+	margin: 0px;
+	padding: 10px;
+}
+
+.content {
+	padding: 10px;
+}
+</style>
+<script>
+	function load() {
+		hashChange();
+		indexSuggestions();
+	}
+
+	function hashChange() {
+		var hash = (location.hash || "#").substring(1);
+		if(hash == "") {
+			hash = "intro";
+		}
+		
+		var opEls = document.querySelectorAll(".operation");
+		for (var i = 0; i < opEls.length; i++) {
+			var opEl = opEls[i];
+			opEl.style.display = hash == opEl.id ? "block" : "none";
+		}
+	}
+
+	var sendCount = 0;
+	function send(form) {
+		var currSendCount = ++sendCount;
+
+		var inputs = form.querySelectorAll("input[type=text]");
+		var data = "";
+		for (var i = 0; i < inputs.length; i++) {
+			var input = inputs[i];
+			data += (i > 0 ? "&" : "") + input.name + "="
+					+ encodeURIComponent(input.value);
+		}
+
+		var action = form.action;
+
+		var http = new XMLHttpRequest();
+		http.open("POST", action, true);
+		http.setRequestHeader("Content-type",
+				"application/x-www-form-urlencoded; charset=UTF-8");
+		http.onreadystatechange = function() {
+			if (http.readyState == 4 && sendCount == currSendCount) {
+				handleResponse(http.status, http.responseText);
+			}
+		};
+		http.send(data);
+
+		var resultEl = document.getElementById("result");
+		resultEl.className = "";
+		resultEl.innerHTML = "<h1>...</h1>";
+
+		return false;
+	}
+
+	function handleResponse(status, text) {
+		var resultEl = document.getElementById("result");
+
+		var jsonHtml = text.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g,
+						"&#039;").replace(/ /g, "&nbsp;").replace(/\n/g,
+						"\n<br/>");
+
+		var statusText = status == 200 ? "success" : "error"
+		resultEl.innerHTML = "<h1>" + statusText
+				+ "</h1><div class=\"content\">" + jsonHtml + "</div>";
+		resultEl.className = statusText;
+
+		var json = JSON.parse(text);
+
+		learnSuggestions(json);
+	}
+
+	var inputsByName = {}
+	function indexSuggestions() {
+		var inputs = document.querySelectorAll("input[type=text]");
+		for (var i = 0; i < inputs.length; i++) {
+			var name = inputs[i].name;
+			var list = inputsByName[name];
+			if (list == null) {
+				list = [];
+				inputsByName[name] = list;
+			}
+			list.push(inputs[i]);
+		}
+	}
+
+	function learnSuggestions(json) {
+		if (Array.isArray(json)) {
+			json.forEach(learnSuggestions);
+		} else if (typeof json == "object") {
+			for ( var key in json) {
+				var value = json[key];
+				if (typeof value != "object") {
+					addSuggestion(key, value);
+				}
+
+				learnSuggestions(value);
+			}
+		}
+	}
+
+	var learned = {};
+	function addSuggestion(key, value) {
+		console.log("addSuggestions(" + key + "," + value + ")");
+
+		if (learned[key + "=" + value]) {
+			return;
+		}
+		learned[key + "=" + value] = true;
+
+		var inputs = inputsByName[key] || [];
+		inputs.forEach(function(input) {
+			if (input.value == "") {
+				input.value = value;
+			}
+
+			var suggs = input.parentNode.parentNode
+					.querySelector(".suggestions");
+
+			var sugg = document.createElement("div");
+			sugg.className = "suggestion";
+			sugg.textContent = value;
+			sugg.onclick = function() {
+				input.value = value;
+			};
+
+			suggs.appendChild(sugg);
+		});
+	}
+</script>
+<body onload="load()" onhashchange="hashChange()">
+
+	<div id="index">
+		<h1>${html:locaName}</h1>
+
+		<div class="content">
+		
+		<a href="#">${html:introName}</a> ${languages}
+		<br/><br/>
+		
+		${operationIndexItems}
+		
+		</div>
+	</div>
+
+	<div id="operations">	
+		${operationForms}
+	
+		<div id="intro" class="operation">
+			<h1>${html:introName}</h1>
+		
+			<div class="content">${introHTML}</div>
+		</div>
+	</div>
+
+	<div id="result"></div>
+</body>
+</html>

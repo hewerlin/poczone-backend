@@ -1,0 +1,19 @@
+<div id="${html:relPath}" class="operation">
+	<h1>${html:relPath}</h1>
+
+	<div class="content">
+		<div class="more">= ${html:locaName}</div>
+		<br />
+
+		<form action="${html:relPath}" method="post"
+			onsubmit="return send(this);" target="_blank">
+			${inputs} <br /> <input type="submit" value="${html:locaName}" />
+		</form>
+
+		<br /> Success output:
+		<div class="more">${outputs}</div>
+
+		<br /> Declared error codes:
+		<div class="more">${errorCodes}</div>
+	</div>
+</div>
