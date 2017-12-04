@@ -48,7 +48,7 @@ public class ApplicationServlet extends HttpServlet {
 		try {
 			Class<?> clazz = Class.forName(appParam);
 			application = (Application) clazz.newInstance();
-			loca = new PropertiesLoca().load(clazz);
+			loca = new PropertiesLoca().load(FrameworkErrorCodes.class).load(clazz);
 		} catch (Exception e) {
 			throw new ServletException("Failed to initialize application", e);
 		}
@@ -190,6 +190,10 @@ public class ApplicationServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		try (ExecutionContextImpl context = new ExecutionContextImpl()) {
+			context.setRoot(new File(req.getServletContext().getRealPath("")));
+			context.setDatabase(buildDatabase(req.getServletContext()));
+			context.setLoca(loca);
+
 			String relPath = getPath(req);
 			Operation operation = getOperation(relPath);
 			if (operation == null) {
@@ -206,12 +210,7 @@ public class ApplicationServlet extends HttpServlet {
 			}
 
 			if (!context.hasErrors()) {
-				context.setRoot(new File(req.getServletContext().getRealPath("")));
-				context.setDatabase(buildDatabase(req.getServletContext()));
-				context.setLoca(loca);
-
-				List<Input<?>> inputs = operation.getInputs();
-				checkAndParseParameters(req, inputs, context);
+				checkAndParseParameters(req, operation, context);
 			}
 
 			if (!context.hasErrors()) {
@@ -224,7 +223,7 @@ public class ApplicationServlet extends HttpServlet {
 
 			JSONObject result = context.hasErrors() ? context.getFailureResult() : context.getSuccessResult();
 
-			if (origin!=null && originOk) {
+			if (origin != null && originOk) {
 				setAccessControlHeaders(resp, origin);
 			}
 
@@ -234,21 +233,24 @@ public class ApplicationServlet extends HttpServlet {
 		}
 	}
 
-	private void checkAndParseParameters(HttpServletRequest req, List<Input<?>> inputs, ExecutionContextImpl context) {
-		for (Input<?> parameter : inputs) {
-			String value = req.getParameter(parameter.getName());
+	private void checkAndParseParameters(HttpServletRequest req, Operation operation, ExecutionContextImpl context) {
+		for (Input<?> input : operation.getInputs()) {
+			String paramKey = operation.getName() + "/" + input.getName();
+			String value = req.getParameter(input.getName());
 
 			ErrorCodeException ex = null;
 			if (value == null) {
-				ex = new ErrorCodeException(FrameworkErrorCodes.MISSING_PARAMETER, parameter.getName());
+				ex = new ErrorCodeException(FrameworkErrorCodes.MISSING_PARAMETER, input.getName(),
+						context.getLoca().getAll(paramKey));
 			} else {
 				try {
-					Object object = parameter.parse(value);
-					context.set(parameter, object);
+					Object object = input.parse(value);
+					context.set(input, object);
 				} catch (ErrorCodeException e) {
 					ex = e;
 				} catch (Exception e) {
-					ex = new ErrorCodeException(FrameworkErrorCodes.INVALID_PARAMETER_VALUE, parameter.getName());
+					ex = new ErrorCodeException(FrameworkErrorCodes.INVALID_PARAMETER_VALUE, input.getName(),
+							context.getLoca().getAll(paramKey));
 				}
 			}
 

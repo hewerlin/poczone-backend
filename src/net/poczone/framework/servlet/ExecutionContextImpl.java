@@ -73,7 +73,7 @@ public class ExecutionContextImpl implements ExecutionContext {
 	@Override
 	public void addError(ErrorCodeException error) {
 		JSONArray errors = failureResult.getJSONArray("errors");
-		errors.put(error.toJSON());
+		errors.put(error.toJSON(loca));
 	}
 
 	protected int getHttpStatus() {

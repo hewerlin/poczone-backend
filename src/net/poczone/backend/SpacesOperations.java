@@ -91,7 +91,7 @@ public class SpacesOperations implements Operations {
 						context.get(USERNAME));
 
 				if (user == null) {
-					throw new ErrorCodeException(USER_NOT_FOUND);
+					throw new ErrorCodeException(USER_NOT_FOUND, context.get(USERNAME));
 				}
 				int userID = user.getInt("userID");
 
