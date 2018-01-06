@@ -29,7 +29,7 @@ public class POCZoneConsts {
 	public static final Input<Session> SESSION_TOKEN = SessionTokens.SESSION_TOKEN;
 	public static final Input<DataAccess> DATA_TOKEN = DataTokens.DATA_TOKEN;
 
-	public static final Input<String> USERNAME = new StringInput("username", "[A-Za-z_\\-\\.]+", 42);
+	public static final Input<String> USERNAME = new StringInput("username", "[A-Za-z0-9_\\-\\.]+", 42);
 	public static final Input<String> PASSWORD = new StringInput("password", ".+");
 
 	public static final int SPACE_ID_LENGTH = 12;
