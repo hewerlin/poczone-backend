@@ -92,7 +92,13 @@ public class DataOperations implements Operations {
 				JSONObject diff = new JSONObject();
 				for (int i = 0; i < updates.length(); i++) {
 					JSONObject row = updates.getJSONObject(i);
-					diff.put(row.getString("itemID"), new JSONTokener(row.getString("json")).nextValue());
+					String id = row.getString("itemID");
+					String json = row.getString("json");
+
+					if ("null".equals(json) && since == 0) {
+						continue;
+					}
+					diff.put(id, new JSONTokener(json).nextValue());
 				}
 
 				context.put(DIFF, diff);
