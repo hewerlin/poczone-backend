@@ -43,6 +43,8 @@ public class POCZoneConsts {
 	public static final Input<PermissionLevel> LEVEL = new EnumInput<>("level", PermissionLevel.class);
 	public static final Input<Boolean> WRITE = new BooleanInput("write");
 	public static final Input<String> IDS = new StringInput("ids", ".*");
+	public static final int COUPON_ID_LENGTH = 12;
+	public static final Input<String> COUPON = new StringInput("coupon", IDGenerator.getPattern(COUPON_ID_LENGTH));
 
 	public static final Output<String> SESSION_TOKEN_OUTPUT = new DefaultOutput<>("sessionToken", String.class);
 	public static final Output<JSONObject> SELF = new DefaultOutput<>("self", JSONObject.class);
@@ -51,8 +53,11 @@ public class POCZoneConsts {
 	public static final Output<JSONObject> DIFF = new DefaultOutput<>("diff", JSONObject.class);
 	public static final Output<Long> NEXT_SINCE = new DefaultOutput<>("nextSince", Long.class);
 	public static final Output<String> DATA_TOKEN_OUTPUT = new DefaultOutput<>("dataToken", String.class);
+	public static final Output<JSONObject> COUPON_OUTPUT = new DefaultOutput<>("coupon", JSONObject.class);
 
 	public static final ErrorCode LOGIN_FAILED = new ErrorCode(400, "LOGIN_FAILED");
 	public static final ErrorCode USERNAME_ALREADY_TAKEN = new ErrorCode(400, "USERNAME_ALREADY_TAKEN");
 	public static final ErrorCode USER_NOT_FOUND = new ErrorCode(400, "USER_NOT_FOUND");
+	public static final ErrorCode COUPON_NOT_FOUND = new ErrorCode(400, "COUPON_NOT_FOUND");
+	public static final ErrorCode COUPON_ALREADY_TAKEN = new ErrorCode(400, "COUPON_ALREADY_TAKEN");
 }
